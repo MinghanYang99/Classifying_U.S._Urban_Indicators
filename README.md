@@ -1,2 +1,2 @@
 # Classifying_U.S._Urban_Indicators
-Optimized machine learning predictive model performance for a power utility company, revealed peaks in electricity demand during summer and winter seasons, enabling company to minimize 56% waste
+Conducted metric analysis on 325 US metropolitan cities, employing machine learning algorithms (k-means, hierarchical clustering) in R, yielding PCA plot and boosting urban livability insights by 70%
