@@ -1,0 +1,200 @@
+---
+title: "535 Exam1"
+author: "Minghan"
+date: "2023-03-07"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+library(readxl)
+library(tibble)
+cities0 = read_xlsx("cities1.xlsx") 
+cities0 = column_to_rownames(cities0, var = "Metropolitan_Area")
+cities0['Metropolitan_Area'] = NULL
+cities0['Unemployment_Threat'] = NULL
+cities0['Crime_Trend'] = NULL
+cities = scale(cities0)
+head(cities)
+```
+
+```{r}
+dist = dist(cities)
+head(dist)
+length(dist)
+```
+##K-MEANS CLUSTERING
+```{r}
+library(cluster)
+library(factoextra)
+library(ggplot2)
+
+set.seed(123)
+twcv = function(k) kmeans(cities,k,nstart = 25)$tot.withinss
+k = 1:16
+twcv_value = sapply(k,twcv)
+head(twcv_value)
+#write a elbow chart, Identify the point where the TWCV starts to decrease slowly
+plot(k,twcv_value, type = 'b', pch = 19, xlab = 'Number of clusters k', ylab = 'TWCV')
+grid()
+```
+
+```{r}
+k2 = kmeans(cities, 2, nstart = 25)
+k3 = kmeans(cities, 3, nstart = 25)
+k4 = kmeans(cities, 4, nstart = 25)
+k5 = kmeans(cities, 5, nstart = 25)
+k6 = kmeans(cities, 6, nstart = 25)
+library(ggplot2)
+library(ggrepel)
+fviz_cluster(k2, data = cities,geom='point') + ggtitle("k=2")
+fviz_cluster(k3, data = cities,geom='point') + ggtitle("k=3")
+fviz_cluster(k4, data = cities,geom='point') + ggtitle("k=4")
+fviz_cluster(k5, data = cities,geom='point') + ggtitle("k=5")
+fviz_cluster(k6, data = cities,geom='point') + ggtitle("k=6")
+```
+## the best k is 
+
+```{r}
+cluster_number_k = as.factor(k4$cluster)
+cities0$cluster_k = cluster_number_k
+# the number of cities in each cluster.
+table(cluster_number_k)
+```
+
+
+```{r}
+aggregate( .~ cluster_k,FUN=median,data = cities0)
+```
+
+```{r}
+m = prcomp(cities, scale=T)
+fviz_pca_biplot(m,labelsize = 2,col.var = "red",
+                habillage = cluster_number_k,geom='point')
+```
+
+```{r}
+# Group (cluster) 1 has high rates on transportation, jobs, education, arts, health care, 
+# recreation and total violent, has low rates on crime.
+
+# Group (cluster) 2 has low rates on cost living and crime, high rates on others.
+
+# Group (cluster) 3 has high rates on cost living, climate, past job growth 
+#and fcast future job growth.
+# has low rates on transprtation, jobs, education, Arts, health care, recreation and population 2000
+
+# Group (cluster) 4 has low rates on transportation, jobs, climate, population 2000, total violent,
+# past job growth and fcast future job growth, has high rates on crime
+
+```
+
+##HIERARCHICAL CLUSTERING
+
+```{r}
+# display the dendrogram.
+h1 <- hclust(dist, method = "ward.D")
+
+plot(h1,cex=0.2,main="ward linkage")
+
+rect.hclust(h1,k=4,border='red')
+
+#find the clusters
+cut1 = cutree(h1, k = 4)
+
+#Find the number of cities in each cluster.
+table(cut1)
+
+#display the cluster plots
+fviz_cluster(list(data = cities, cluster = cut1),main="ward linkage",
+             palette = "Set2",show.clust.cent = F, labelsize = 10,geom='point',
+             ggtheme = theme_minimal()
+              )
+# Find the CCPC
+c1 = cophenetic(h1)
+cor(dist,c1)
+```
+
+```{r}
+# display the dendrogram.
+h2 <- hclust(dist, method = "complete")
+
+plot(h2,cex=0.2,main="complete linkage")
+
+rect.hclust(h2,k=4,border='red')
+
+#find the clusters
+cut2 = cutree(h2, k = 4)
+
+#Find the number of cities in each cluster.
+table(cut2)
+
+#display the cluster plots
+fviz_cluster(list(data = cities, cluster = cut2),main="complete linkage",
+             palette = "Set2",show.clust.cent = F, labelsize = 10,geom='point',
+             ggtheme = theme_minimal()
+              )
+# Find the CCPC
+c2 = cophenetic(h2)
+cor(dist,c2)
+```
+
+```{r}
+# display the dendrogram.
+h3 <- hclust(dist, method = "average")
+
+plot(h3,cex=0.2,main="average linkage")
+
+rect.hclust(h3,k=4,border='red')
+
+#find the clusters
+cut3 = cutree(h3, k = 4)
+
+#Find the number of cities in each cluster.
+table(cut3)
+
+#display the cluster plots
+fviz_cluster(list(data = cities, cluster = cut3),main="average linkage",
+             palette = "Set2",show.clust.cent = F, labelsize = 10,geom='point',
+             ggtheme = theme_minimal()
+              )
+# Find the CCPC
+c3 = cophenetic(h3)
+cor(dist,c3)
+```
+## I prefer the average linkage
+
+```{r}
+cluster_number_h = as.factor(cut3)
+cities0$cluster_h = cluster_number_h
+# the number of cities in each cluster.
+aggregate( .~ cluster_h,FUN=median,data = cities0)
+```
+```{r}
+m2 = prcomp(cities, scale=T)
+fviz_pca_biplot(m2,labelsize = 2,col.var = "red",repel = T,geom='point',
+                habillage = cut3)
+```
+
+```{r}
+# Group (cluster) 1 has high rates on cost living, crime, past job growth
+# has low rates on transportation, jobs, education, arts, health care, recreation, 
+# population 2000, total violent, total property.
+
+# Group (cluster) 2 has low rates on total violent.
+# has high rates on jobs, climate, total property, past job growth, fcast future job growth.
+
+
+# Group (cluster) 3 has low rates on cost living, climate, crime, past job growth 
+# and fcast future job growth.
+# has high rates on transprtation, jobs, education, arts, health care, recreation, 
+# population 2000 and total violent.
+
+# Group (cluster) 4 has low rates on cost living, jobs, crime, past job growth 
+# and fcast future job growth, 
+
+# has high rates on transportation, cilmate, arts, health care, recreation, 
+# population 2000 and total violent,
+
+
+```
+
